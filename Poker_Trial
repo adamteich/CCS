@@ -1,4 +1,6 @@
 
+%super primitive version of one poker game, runs 100 trials unless the agent busts. Right now, the probability in which the agent bets isn't determined by past results, that's the immediate thing to change.
+
 
 cash= 10000;
 reward=0;
