@@ -1,0 +1,54 @@
+
+%basic outline of a hand
+user_hand= round(2*rand)+1;
+opponent_hand=round(2*rand)+1;
+flop=round(2*rand)+1;
+computer_action=0; %changes to 1 if it bets
+user_action=0;%changes to 1 if it bets
+
+%computer action
+
+if opponent_hand+flop<5
+    %computer bets
+    computer_action=1;
+else
+    %computer bluffs with probability b1 (a parameter)
+    if rand<b1
+        %computer bets
+        computer_action=1;
+    else
+        % computer folds
+        %end the hand, give user reward
+    end
+end
+
+%agent action
+
+if user_hand +flop>4
+    %user should fold, no way they can win
+    
+else
+    %user needs to determine whether to bet based off previous trials
+    
+    %if they bet, set user_action=1
+    %else, subtract 100 from user total
+    
+    
+end
+
+if user_action==computer_action && computer_action==1 %if both bet
+    
+    if user_hand> computer_hand
+        %give user reward
+    end
+    if user_hand< computer_hand
+     %give computer reward   
+    end
+    if user_hand==computer_hand
+        %give them their money back
+    end
+    
+end
+    
+    
+%update V, end trial
