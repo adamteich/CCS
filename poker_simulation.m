@@ -33,7 +33,7 @@ i=2
                 U(1) = -50;
             end
         end
-        U(2) = -25; % expected utility of folding
+        U(2) = -1; % expected utility of folding
     else % if competitor folds, we can always play and win for utility of 50
         U(1) = 50;
     end
