@@ -1,4 +1,4 @@
-function output = poker_simulation(alpha, beta, competitor_cards, competitor_actions, middle_cards, self_cards)
+function output = poker_simulation(alpha, beta, competitor_cards, competitor_actions, middle_cards, self_cards, starting_cash)
 
 num_hands = length(competitor_cards);
 
@@ -6,13 +6,17 @@ num_hands = length(competitor_cards);
 P_competitor_plays_one_when_playing = zeros(1,num_hands+1); % probability that opponent plays high-value card when playing
 player_actions = zeros(1,num_hands+1); % actions chosen by our agent, 1 == plays, 0 == folds
 reward = zeros(1,num_hands); % rewards obtained
-cumulative_reward = zeros(1,num_hands); % cumulative rewards obtained
+cumulative_reward = zeros(1,num_hands);% cumulative rewards obtained
+
+
 
 % by learning the probability that an opponent plays 1s when playing, we can understand their behavior and predict the utility of their moves
 P_competitor_plays_one_when_playing(1) = 0; % arbitrarily initialize probability to zero (we could change this to anything / optimize later)
 
-for t = 1:num_hands
-    
+t=1
+i=2
+
+ while cumulative_reward(i-1)>-starting_cash && t<num_hands+1
     % 1. calculate expected utility of competitor's card
     U_competitor = P_competitor_plays_one_when_playing(t) * competitor_actions(t);
     
@@ -29,7 +33,7 @@ for t = 1:num_hands
                 U(1) = -50;
             end
         end
-        U(2) = -1; % expected utility of folding
+        U(2) = -25; % expected utility of folding
     else % if competitor folds, we can always play and win for utility of 50
         U(1) = 50;
     end
@@ -58,6 +62,14 @@ for t = 1:num_hands
         end
     end
     cumulative_reward(t) = sum(reward);
+    if cumulative_reward(t)<-starting_cash
+        for j=1:length(cumulative_reward)-t
+            cumulative_reward(t+j)=cumulative_reward(t);
+            
+        end
+       
+    end
+
     
     % 5. learn from outcome!
     if competitor_actions(t)==0
@@ -67,7 +79,26 @@ for t = 1:num_hands
     end
     P_competitor_plays_one_when_playing(t+1) = P_competitor_plays_one_when_playing(t) + alpha*delta;  % update
     
-end
+     if cumulative_reward(t)<-starting_cash
+
+         for j=1:length(cumulative_reward)-t
+            P_competitor_plays_one_when_playing(t+j+1)=P_competitor_plays_one_when_playing(t+1);
+            
+        end
+       
+    end
+    
+    
+    
+    t=t+1;
+    
+    i=t
+    if i==num_hands+1
+        i=num_hands;
+    end
+ end
+  
+
 
 output.P_competitor_plays_one_when_playing = P_competitor_plays_one_when_playing;
 output.reward = reward;
