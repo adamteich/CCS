@@ -1,64 +1,106 @@
-% arbitrary learning parameters — we can optimize these later
-alpha = 0.01;
-beta = 2;
-num_hands = 2500;
+function output = poker_simulation(alpha, beta, competitor_cards, competitor_actions, middle_cards, self_cards, starting_cash)
 
-% generate cards for the game (as well as predetermined/static opponent actions)
-% for now, card options consist exclusively of 1s and 0s
-competitor_cards = randi([0 1], num_hands, 1);
-competitor_actions = competitor_cards; % for now, let's have the opponent play only when they have a good card (a 1) for simplicity
-% note: as such, right now competitor_actions actions don't yet depend on what the middle card is–this is still a missing component
+num_hands = length(competitor_cards);
 
-middle_cards = randi([0 1], num_hands, 1);
-self_cards = randi([0 1], num_hands, 1);
+% initialize output variables
+P_competitor_plays_one_when_playing = zeros(1,num_hands+1); % probability that opponent plays high-value card when playing
+player_actions = zeros(1,num_hands+1); % actions chosen by our agent, 1 == plays, 0 == folds
+reward = zeros(1,num_hands); % rewards obtained
+cumulative_reward = zeros(1,num_hands);% cumulative rewards obtained
 
-% opponent can bluff (play on a zero instead of folding) a given proportion of the time
-bluffProportion = 0.25;
-for i=1:length(competitor_actions)
-    if competitor_actions(i)==0 && rand<bluffProportion
-        competitor_actions(i)=1;
+
+
+% by learning the probability that an opponent plays 1s when playing, we can understand their behavior and predict the utility of their moves
+P_competitor_plays_one_when_playing(1) = 0; % arbitrarily initialize probability to zero (we could change this to anything / optimize later)
+
+t=1
+i=2
+
+ while cumulative_reward(i-1)>-starting_cash && t<num_hands+1
+    % 1. calculate expected utility of competitor's card
+    U_competitor = P_competitor_plays_one_when_playing(t) * competitor_actions(t);
+    
+    % 2. calculate expected utilities of our own actions (playing and folding)
+    % U = [utility_of_playing, utility_of_folding]
+    % to do: expected utilities should probably be more directly based on probabilities (rather than being discrete values: -1, 50, or -50)
+    if competitor_actions(t) % if competitor plays...
+        if self_cards(t) + U_competitor + middle_cards(t) > 2 % ...and we expect to bust, then we expect utility of -50
+            U(1) = -50;
+        else % ...and we don't bust...
+            if self_cards(t)>U_competitor % ...and we expect to win, then we expect utility of 50
+                U(1) = 50;
+            else % ...and we expect to lose, then we expect utility of -50
+                U(1) = -50;
+            end
+        end
+        U(2) = -25; % expected utility of folding
+    else % if competitor folds, we can always play and win for utility of 50
+        U(1) = 50;
     end
-    % if we want, we can also have the competitor fold on 1s for a given proportion as well
-    % the agent still learns appropriately (yay!), but we can leave this off right now for simplicity
-%     if competitor_actions(i)==1 && rand<bluffProportion
-%         competitor_actions(i)=0;
-%     end
-end
+    U(2) = -1; % folding always has utility of -1
+    
+    % 3. use expected utilities to determine our own best action
+    P_playing_card = exp(beta*U(1))/sum(exp(beta*U)); % probability of our agent playing rather than folding
+    player_actions(t) = rand < P_playing_card; % probability --> action (1 == playing, 0 == folding)
+    
+    % 4. now that all players have made their choice, we can calculate the actual outcome and reward for our agent
+    if player_actions(t)==0 % if we fold, we automatically get reward=-1
+        reward(t) = -1;
+    else % if we play...
+        if competitor_actions(t) % if competitor plays...
+            if self_cards(t) + competitor_cards(t) + middle_cards(t) > 2 % ...and we bust, then reward=-50
+                reward(t) = -50; % ...
+            else % ...and we don't bust...
+                if self_cards(t)>competitor_cards(t) % ...and win, then then reward=50
+                    reward(t) = 50;
+                else % ...and lose, then reward=-50
+                    reward(t) = -50;
+                end
+            end
+        else % if competitor folds
+            reward(t) = 50;
+        end
+    end
+    cumulative_reward(t) = sum(reward);
+    if cumulative_reward(t)<-starting_cash
+        for j=1:length(cumulative_reward)-t
+            cumulative_reward(t+j)=cumulative_reward(t);
+            
+        end
+       
+    end
 
-% now, let's actually run the learning simulation
-output = poker_simulation(alpha, beta, competitor_cards, competitor_actions, middle_cards, self_cards)
+    
+    % 5. learn from outcome!
+    if competitor_actions(t)==0
+        delta = 0; % if competitor folds, there's nothing to learn about the values they play
+    else
+        delta = (competitor_cards(t)*competitor_actions(t)) - P_competitor_plays_one_when_playing(t); % prediction error (actual - estimate)
+    end
+    P_competitor_plays_one_when_playing(t+1) = P_competitor_plays_one_when_playing(t) + alpha*delta;  % update
+    
+     if cumulative_reward(t)<-starting_cash
+
+         for j=1:length(cumulative_reward)-t
+            P_competitor_plays_one_when_playing(t+j+1)=P_competitor_plays_one_when_playing(t+1);
+            
+        end
+       
+    end
+    
+    
+    
+    t=t+1;
+    
+    i=t
+    if i==num_hands+1
+        i=num_hands;
+    end
+ end
+  
 
 
-% let's see how our agent learned to approximate the playing behavior of the opponent
-% (or more specifically, the probability that the opponent plays a 1 when it plays) 
-% this allows our agent to then calculate expected utilities of playing vs folding and act appropriately
-figure()
-plot(output.P_competitor_plays_one_when_playing)
-title("Learned Probability of Opponent Playing 1s")
-xlabel("Hand #")
-ylabel("P( Opponent Plays a 1 | Opponent Plays )");
-% yay! we see that our model correctly converges to a value of 0.8!
-% this makes sense, because right now the competitor bluffs and plays a 0 one time for every four times it plays a 1 --> 4 ones played / 5 total plays = 0.8
-
-% we can also infer the learned probability that the competitor plays a zero (from bluffing)
-figure()
-plot(1-output.P_competitor_plays_one_when_playing)
-title("Learned Probability of Opponent Playing 0s")
-xlabel("Hand #")
-ylabel("P( Opponent Plays a 0 | Opponent Plays )");
-
-
-% let's also see how successfully our model wins rewards
-figure()
-plot(output.cumulative_reward)
-title("Cumulative Agent Rewards")
-xlabel("Hand #")
-ylabel("Cumulative Reward Amount");
-% yay! our agent performs well and wins more money than it loses!
-
-
-% finally, let's look at overall stats
-fold_rate = sum(output.reward(:) == -1) / num_hands
-win_rate = sum(output.reward(:) == 50) / num_hands
-lose_rate = sum(output.reward(:) == -50) / num_hands
-% yay! our agent has a much higher win rate than lose rate (and seemingly folds appropriately in order to do so!)
+output.P_competitor_plays_one_when_playing = P_competitor_plays_one_when_playing;
+output.reward = reward;
+output.cumulative_reward = cumulative_reward;
+output.player_actions = player_actions;
