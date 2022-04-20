@@ -1,7 +1,7 @@
 function output = poker_simulation(alpha, beta, competitor_cards, competitor_actions, middle_cards, self_cards, starting_cash)
 
 num_hands = length(competitor_cards);
-
+num_hands_played=0;
 % initialize output variables
 P_competitor_plays_one_when_playing = zeros(1,num_hands+1); % probability that opponent plays high-value card when playing
 player_actions = zeros(1,num_hands+1); % actions chosen by our agent, 1 == plays, 0 == folds
@@ -33,11 +33,11 @@ i=2
                 U(1) = -50;
             end
         end
-        U(2) = -1; % expected utility of folding
+        U(2) = -10; % expected utility of folding
     else % if competitor folds, we can always play and win for utility of 50
         U(1) = 50;
     end
-    U(2) = -1; % folding always has utility of -1
+    U(2) = -10; % folding always has utility of -10
     
     % 3. use expected utilities to determine our own best action
     P_playing_card = exp(beta*U(1))/sum(exp(beta*U)); % probability of our agent playing rather than folding
@@ -45,7 +45,7 @@ i=2
     
     % 4. now that all players have made their choice, we can calculate the actual outcome and reward for our agent
     if player_actions(t)==0 % if we fold, we automatically get reward=-1
-        reward(t) = -1;
+        reward(t) = -10;
     else % if we play...
         if competitor_actions(t) % if competitor plays...
             if self_cards(t) + competitor_cards(t) + middle_cards(t) > 2 % ...and we bust, then reward=-50
@@ -63,6 +63,7 @@ i=2
     end
     cumulative_reward(t) = sum(reward);
     if cumulative_reward(t)<-starting_cash
+        num_hands_played=t;
         for j=1:length(cumulative_reward)-t
             cumulative_reward(t+j)=cumulative_reward(t);
             
@@ -89,8 +90,9 @@ i=2
     end
     
     
-    
+    num_hands_played=t
     t=t+1;
+    
     
     i=t
     if i==num_hands+1
@@ -104,3 +106,6 @@ output.P_competitor_plays_one_when_playing = P_competitor_plays_one_when_playing
 output.reward = reward;
 output.cumulative_reward = cumulative_reward;
 output.player_actions = player_actions;
+output.fold_rate = sum(output.reward(:) == -10) / num_hands_played
+output.win_rate = sum(output.reward(:) == 50) / num_hands_played
+output.lose_rate = sum(output.reward(:) == -50) / num_hands_played
