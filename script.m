@@ -1,9 +1,9 @@
    
 % arbitrary learning parameters — we can optimize these later
-alpha = 0.01;
+alpha = 0.05;
 beta = 2;
 num_hands = 500;
-starting_cash= 100;
+starting_cash = 100;
 
 % generate cards for the game (as well as predetermined/static opponent actions)
 % for now, card options consist exclusively of 1s and 0s
@@ -52,17 +52,10 @@ ylabel("P( Opponent Plays a 0 | Opponent Plays )");
 
 % let's also see how successfully our model wins rewards
 figure()
-plot(output.cumulative_reward)
+plot(output.player_balance)
 hold on
-yline(-starting_cash);
+yline(0);
 title("Cumulative Agent Rewards")
 xlabel("Hand #")
-ylabel("Cumulative Reward Amount");
+ylabel("Player Balance ($)");
 % yay! our agent performs well and wins more money than it loses!
-
-
-% finally, let's look at overall stats
-fold_rate = sum(output.reward(:) == -1) / num_hands
-win_rate = sum(output.reward(:) == 50) / num_hands
-lose_rate = sum(output.reward(:) == -50) / num_hands
-% yay! our agent has a much higher win rate than lose rate (and seemingly folds appropriately in order to do so!)
