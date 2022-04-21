@@ -1,8 +1,8 @@
    
 % arbitrary learning parameters — we can optimize these later
-alpha = 0.05;
-beta = 2;
-num_hands = 500;
+alpha = 0.02;
+beta = 5;
+num_hands = 1000;
 starting_cash = 100;
 
 % generate cards for the game (as well as predetermined/static opponent actions)
@@ -15,7 +15,7 @@ middle_cards = randi([0 1], num_hands, 1);
 self_cards = randi([0 1], num_hands, 1);
 
 % opponent can bluff (play on a zero instead of folding) a given proportion of the time
-bluffProportion = 0.2;
+bluffProportion = 0.25;
 for i=1:length(competitor_actions)
     if competitor_actions(i)==0 && rand<bluffProportion
         competitor_actions(i)=1;
@@ -38,7 +38,7 @@ figure()
 plot(output.P_competitor_plays_one_when_playing)
 title("Learned Probability of Opponent Playing 1s")
 xlabel("Hand #")
-ylabel("P( Opponent Plays a 1 | Opponent Plays )");
+ylabel("P( Opponent Plays a 1 | Opponent Plays )")
 % yay! we see that our model correctly converges to a value of 0.8!
 % this makes sense, because right now the competitor bluffs and plays a 0 one time for every four times it plays a 1 --> 4 ones played / 5 total plays = 0.8
 
@@ -47,7 +47,7 @@ figure()
 plot(1-output.P_competitor_plays_one_when_playing);
 title("Learned Probability of Opponent Playing 0s")
 xlabel("Hand #")
-ylabel("P( Opponent Plays a 0 | Opponent Plays )");
+ylabel("P( Opponent Plays a 0 | Opponent Plays )")
 
 
 % let's also see how successfully our model wins rewards

@@ -5,8 +5,7 @@ reward(1) = 0;
 player_balance(1) = starting_cash;
 
 % by learning the probability that an opponent plays 1s when playing, we can understand their behavior and predict the utility of their moves
-P_competitor_plays_one_when_playing(1) = 0.5; % arbitrarily initialize probability to zero (we could change this to anything / optimize later)
-
+P_competitor_plays_one_when_playing(1) = 1; % starts assuming no bluffing
 t=1;
 while t<=num_hands && sum(reward)+starting_cash>0
     % 1. calculate expected utility of competitor's card
@@ -14,7 +13,7 @@ while t<=num_hands && sum(reward)+starting_cash>0
     
     % 2. calculate expected utilities of our own actions (playing and folding)
     % U = [utility_of_playing, utility_of_folding]
-    % to do: expected utilities should probably be more directly based on probabilities (rather than being discrete values: -1, 50, or -50)
+    % to do: expected utilities should probably be more directly based on probabilities (rather than being discrete values: -10, 50, or -50)
     if competitor_actions(t) % if competitor plays...
         if self_cards(t) + U_competitor + middle_cards(t) > 2 % ...and we expect to bust, then we expect utility of -50
             U(1) = -50;
@@ -25,18 +24,17 @@ while t<=num_hands && sum(reward)+starting_cash>0
                 U(1) = -50;
             end
         end
-        U(2) = -10; % expected utility of folding
-    else % if competitor folds, we can always play and win for utility of 50
-        U(1) = 50;
+    else % if competitor folds, we can always play and win for utility of 10
+        U(1) = 10;
     end
-    U(2) = -10; % folding always has utility of -10
+    U(2) = -10 % folding always has utility of -10
     
     % 3. use expected utilities to determine our own best action
     P_playing_card = exp(beta*U(1))/sum(exp(beta*U)); % probability of our agent playing rather than folding
     player_actions(t) = rand < P_playing_card; % probability --> action (1 == playing, 0 == folding)
     
     % 4. now that all players have made their choice, we can calculate the actual outcome and reward for our agent
-    if player_actions(t)==0 % if we fold, we automatically get reward=-1
+    if player_actions(t)==0 % if we fold, we automatically get reward=-10
         reward(t) = -10;
     else % if we play...
         if competitor_actions(t) % if competitor plays...
@@ -45,12 +43,14 @@ while t<=num_hands && sum(reward)+starting_cash>0
             else % ...and we don't bust...
                 if self_cards(t)>competitor_cards(t) % ...and win, then then reward=50
                     reward(t) = 50;
+                elseif self_cards(t)==competitor_cards(t) % ...and tie, then then reward=0
+                    reward(t) = 0;
                 else % ...and lose, then reward=-50
                     reward(t) = -50;
                 end
             end
         else % if competitor folds
-            reward(t) = 50;
+            reward(t) = 10;
         end
     end
     player_balance(t+1) = sum(reward) + starting_cash;
@@ -71,6 +71,8 @@ output.P_competitor_plays_one_when_playing = P_competitor_plays_one_when_playing
 output.reward = reward;
 output.player_balance = player_balance;
 output.player_actions = player_actions;
-output.fold_rate = sum(output.reward(:) == -10) / length(reward)
-output.win_rate = sum(output.reward(:) == 50) / length(reward)
-output.lose_rate = sum(output.reward(:) == -50) / length(reward)
+output.fold_rate = sum(output.reward(:) == -10) / length(reward);
+output.win_rate = sum(output.reward(:) == 50) / length(reward);
+output.lose_rate = sum(output.reward(:) == -50) / length(reward);
+output.tie_rate = sum(output.reward(:) == 0) / length(reward);
+output.win_from_opponent_fold = sum(output.reward(:) == 10) / length(reward);
