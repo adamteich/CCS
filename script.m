@@ -1,7 +1,7 @@
    
-% arbitrary learning parameters — we can optimize these later
+% parameters
 alpha = 0.02;
-beta = 5;
+beta = .5;
 num_hands = 1000;
 starting_cash = 100;
 

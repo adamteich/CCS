@@ -5,13 +5,16 @@ reward(1) = 0;
 player_balance(1) = starting_cash;
 
 % by learning the probability that an opponent plays 1s when playing, we can understand their behavior and predict the utility of their moves
-P_competitor_plays_one_when_playing(1) = 0.5; % starts assuming no bluffing
+P_competitor_plays_one_when_playing(1) = 0.5;
+
 t=1;
 bet_amount=50;
 while t<=num_hands && sum(reward)+starting_cash>0
     % 1. calculate expected utility of competitor's card
     U_competitor = P_competitor_plays_one_when_playing(t) * competitor_actions(t);
-    if player_balance(t) >300
+    
+    % dynamic betting - in progress
+    if player_balance(t)>300
         bet_amount= round(player_balance(t)* (rand()+1)/3); %if past a certain threshold, agent bets between 1/3 and 2/3 of current balance
     end
    
@@ -24,9 +27,8 @@ while t<=num_hands && sum(reward)+starting_cash>0
         else % ...and we don't bust...
             if self_cards(t)>U_competitor % ...and we expect to win, then we expect utility of 50
                 U(1) = bet_amount;
-            if self_cards(t)==U_competitor
-                 U(1) = 5;
-            end
+            elseif self_cards(t)==U_competitor
+                    U(1) = 5;
             else % ...and we expect to lose, then we expect utility of -50
                 U(1) = -bet_amount;
             end
@@ -38,31 +40,31 @@ while t<=num_hands && sum(reward)+starting_cash>0
     
     % 3. use expected utilities to determine our own best action
     output.U_1(t)=U(1);
-    P_playing_card = exp(beta*U(1))/sum(exp(beta*U))% probability of our agent playing rather than folding--check this
-    if isnan(P_playing_card)
+    P_playing_card = exp(beta*U(1))/sum(exp(beta*U)); % probability of our agent playing rather than folding--check this
+    if isnan(P_playing_card) % correct for rounding errors when using large utility discrepencies
         P_playing_card=1;
     end
     output.P_playing(t)= P_playing_card;
     player_actions(t) = rand < P_playing_card; % probability --> action (1 == playing, 0 == folding)
     
     % 4. now that all players have made their choice, we can calculate the actual outcome and reward for our agent
-    if player_actions(t)==0 % if we fold, we automatically get reward=-10
-        reward(t) = -10;
-    else % if we play...
-        if competitor_actions(t) % if competitor plays...
+    if competitor_actions(t)==0 % if opponent folds, we automatically get reward=10
+        reward(t) = 10;
+    else % if competitor plays...
+        if player_actions(t) % if we play...
             if self_cards(t) + competitor_cards(t) + middle_cards(t) > 2 % ...and we bust, then reward=-50
                 reward(t) = -bet_amount; % ...
             else % ...and we don't bust...
                 if self_cards(t)>competitor_cards(t) % ...and win, then then reward=50
                     reward(t) = bet_amount;
-                elseif self_cards(t)==competitor_cards(t) % ...and tie, then then reward=0
+                elseif self_cards(t)==competitor_cards(t) % ...and tie, then then reward=5
                     reward(t) = 5;
                 else % ...and lose, then reward=-50
                     reward(t) = -bet_amount;
                 end
             end
-        else % if competitor folds
-            reward(t) = 10;
+        else % if we fold
+            reward(t) = -10;
         end
     end
     player_balance(t+1) = sum(reward) + starting_cash;
@@ -71,7 +73,7 @@ while t<=num_hands && sum(reward)+starting_cash>0
     if competitor_actions(t)==0
         delta = 0; % if competitor folds, there's nothing to learn about the values they play
     else
-        delta = (competitor_cards(t)*competitor_actions(t)) - P_competitor_plays_one_when_playing(t); % prediction error (actual - estimate)
+        delta = competitor_cards(t) - P_competitor_plays_one_when_playing(t); % prediction error (actual - estimate)
     end
     P_competitor_plays_one_when_playing(t+1) = P_competitor_plays_one_when_playing(t) + alpha*delta;  % update
     
@@ -88,4 +90,4 @@ output.win_rate = sum(output.reward(:) >= 50) / length(reward);
 output.lose_rate = sum(output.reward(:) <= -50) / length(reward);
 output.tie_rate = sum(output.reward(:) == 5) / length(reward);
 output.win_from_opponent_fold = sum(output.reward(:) == 10) / length(reward);
-output.play_rate= output.win_rate+output.lose_rate+output.tie_rate
+output.play_rate= output.win_rate+output.lose_rate+output.tie_rate;
