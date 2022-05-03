@@ -9,7 +9,7 @@ starting_cash = 100;
 bust_limit = 7;
 
 for i=1:length(alphas)
-    for j=1:500
+    for j=1:300
              middle_cards = randi([1 5], num_hands, 1);
             self_cards = randi([1 5], num_hands, 1);
             competitor_cards = randi([1 5], num_hands, 1);
@@ -25,15 +25,42 @@ for i=1:length(alphas)
 
             % opponent can bluff (play on a bust instead of folding) a given proportion of the time
             bluffProportion = 0.25;
+            competitor_bluff_indexes=[];
+            
             for s=1:length(competitor_actions)
                 if competitor_actions(s)==0 && rand<bluffProportion
                     competitor_actions(s)=1;
+                    if (s<length(competitor_actions))
+                    competitor_bluff_indexes(length(competitor_bluff_indexes)+1)=s;
+                    end
                 end
             end
         output = poker_simulation(alphas(i), beta, competitor_cards, competitor_actions, middle_cards, self_cards, starting_cash, bust_limit);
-        bust(i,j)= output.bust;
+        bust(i,j)= output.player_balance(end);
+        competitor_bluff_index_shortened=[];
+        W=1;
+        while W<length(competitor_bluff_indexes) && competitor_bluff_indexes(W)<length(output.reward)-1
+            2+2;
+            competitor_bluff_index_shortened(end+1)=competitor_bluff_indexes(W);
+            W=W+1;
+        end
+        
+        
+        if length(competitor_bluff_index_shortened)>0
+        different_behavior(i,j)=ttest2(output.reward, output.reward((competitor_bluff_index_shortened)+1));
+        end
     end
     
 end
 mean(bust,2)
 ttest2(bust(1,:), bust(2,:))
+ttest2(bust(2,:), bust(3,:))
+mean(different_behavior,2) 
+ %if =1, then our model implements the gamblers fallacy, playing
+ %differently after getting bluffed every time
+
+
+
+
+
+
