@@ -6,7 +6,7 @@ betas = linspace(0,1,100);
 for i = 1:length(alphas)  
     for j = 1:length(betas) 
         totalWinnings(i,j) = 0;
-        for k = 1:5
+        for k = 1:3
             alpha = alphas(i);
             beta=betas(j);
 
@@ -18,12 +18,13 @@ for i = 1:length(alphas)
             middle_cards = randi([0 1], num_hands, 1);
             self_cards = randi([0 1], num_hands, 1);
             bluffProportion = 0.25;
+            bust_limit = 7;
             for x=1:length(competitor_actions)
                 if competitor_actions(x)==0 && rand<bluffProportion
                     competitor_actions(x)=1;
                 end
             end
-            trial = poker_simulation(alpha, beta, competitor_cards, competitor_actions, middle_cards, self_cards, starting_cash); 
+            trial = poker_simulation(alpha, beta, competitor_cards, competitor_actions, middle_cards, self_cards, starting_cash, bust_limit); 
             totalWinnings(i,j) = totalWinnings(i,j) + sum(trial.reward);
         end
     end
