@@ -47,7 +47,22 @@ for i=1:length(alphas)
         
         
         if length(competitor_bluff_index_shortened)>0
-        different_behavior(i,j)=ttest2(output.reward, output.reward((competitor_bluff_index_shortened)+1));
+         N1=length((output.player_actions(competitor_bluff_index_shortened+1)));
+            N2=length(output.player_actions);
+
+            post_bluff=output.player_actions(competitor_bluff_index_shortened+1);
+            n1=length(post_bluff(post_bluff==1));
+            n2= length(output.player_actions(output.player_actions==1));
+
+            p0 = (n1+n2) / (N1+N2);
+              n10 = N1 * p0;
+              n20 = N2 * p0;
+            observed = [n1 N1-n1 n2 N2-n2];
+                   expected = [n10 N1-n10 n20 N2-n20];
+                   chi2stat = sum((observed-expected).^2 ./ expected);
+                   p = 1 - chi2cdf(chi2stat,1);
+                   %chi^2 test code via https://www.mathworks.com/matlabcentral/answers/96572-how-can-i-perform-a-chi-square-test-to-determine-how-statistically-different-two-proportions-are-in
+            different_behavior(i,j)=p <0.1;
         end
     end
     
@@ -56,6 +71,7 @@ mean(bust,2)
 ttest2(bust(1,:), bust(2,:))
 ttest2(bust(2,:), bust(3,:))
 mean(different_behavior,2) 
+ttest2(different_behavior(1,:),different_behavior(2,:))
  %if =1, then our model implements the gamblers fallacy, playing
  %differently after getting bluffed every time
 
