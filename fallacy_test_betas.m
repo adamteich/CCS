@@ -18,7 +18,6 @@ for i=1:length(betas)
         competitor_bluff_index_shortened=[];
         W=1;
         while W<length(competitor_bluff_indexes) && competitor_bluff_indexes(W)<length(output.reward)-1
-            
             competitor_bluff_index_shortened(end+1)=competitor_bluff_indexes(W);
             W=W+1;
         end
@@ -33,24 +32,21 @@ for i=1:length(betas)
             n2= length(output.player_actions(output.player_actions==1));
 
             p0 = (n1+n2) / (N1+N2);
-              n10 = N1 * p0;
-              n20 = N2 * p0;
+            n10 = N1 * p0;
+            n20 = N2 * p0;
             observed = [n1 N1-n1 n2 N2-n2];
-                   expected = [n10 N1-n10 n20 N2-n20];
-                   chi2stat = sum((observed-expected).^2 ./ expected);
-                   p = 1 - chi2cdf(chi2stat,1);
-                   %chi^2 test code via https://www.mathworks.com/matlabcentral/answers/96572-how-can-i-perform-a-chi-square-test-to-determine-how-statistically-different-two-proportions-are-in
+            expected = [n10 N1-n10 n20 N2-n20];
+            chi2stat = sum((observed-expected).^2 ./ expected);
+            p = 1 - chi2cdf(chi2stat,1);
+            %chi^2 test code via https://www.mathworks.com/matlabcentral/answers/96572-how-can-i-perform-a-chi-square-test-to-determine-how-statistically-different-two-proportions-are-in
             play_after_bluff_rate= mean(output.player_actions(competitor_bluff_index_shortened+1));
             play_rate=mean(output.player_actions);
-                   play_more_after_bluff_rate(i,j)=play_after_bluff_rate > play_rate;
-                   different_behavior(i,j)=p<0.1;
+            play_more_after_bluff_rate(i,j)=play_after_bluff_rate > play_rate;
+            different_behavior(i,j)=p<0.1;
         end
     end
     
 end
-% ttest2(bust(1,:), bust(2,:))
-% ttest2(bust(2,:), bust(3,:))
-% ttest2(different_behavior(1,:),different_behavior(2,:))
 [h,p] = ttest2((play_more_after_bluff_rate(1,:)),play_more_after_bluff_rate(2,:))
 [h,p] = ttest2((play_more_after_bluff_rate(2,:)),play_more_after_bluff_rate(3,:))
 [h,p] = ttest2((play_more_after_bluff_rate(3,:)),play_more_after_bluff_rate(4,:))

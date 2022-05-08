@@ -18,7 +18,6 @@ for i=1:length(alphas)
         competitor_bluff_index_shortened=[];
         W=1;
         while W<length(competitor_bluff_indexes) && competitor_bluff_indexes(W)<length(output.reward)-1
-            
             competitor_bluff_index_shortened(end+1)=competitor_bluff_indexes(W);
             W=W+1;
         end
@@ -48,9 +47,6 @@ for i=1:length(alphas)
     end
     
 end
-% [h,p] = ttest2(bust(1,:), bust(2,:))
-% [h,p] = ttest2(bust(2,:), bust(3,:))
-% [h,p] = ttest2(different_behavior(1,:),different_behavior(2,:))
 [h,p] = ttest2((play_more_after_bluff_rate(1,:)),play_more_after_bluff_rate(3,:))
 [h,p] = ttest2((play_more_after_bluff_rate(3,:)),play_more_after_bluff_rate(5,:))
 [h,p] = ttest2((play_more_after_bluff_rate(5,:)),play_more_after_bluff_rate(7,:))
